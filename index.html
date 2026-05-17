@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Orbitary</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: monospace;
+  background: #0f1220;
+  color: #eaeaea;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.container {
+  width: 90%;
+  max-width: 900px;
+  text-align: center;
+}
+
+.page { display: none; }
+.active { display: block; }
+
+input, textarea, select {
+  width: 70%;
+  max-width: 500px;
+  padding: 10px;
+  margin: 6px;
+  border-radius: 10px;
+  border: 1px solid #333;
+  background: #1b1f36;
+  color: white;
+  font-family: monospace;
+}
+
+button {
+  padding: 10px 15px;
+  margin: 5px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg,#4a6cf7,#7c4dff);
+  color: white;
+  font-weight: bold;
+}
+
+.back { background: linear-gradient(135deg,#2ecc71,#3498db); }
+
+.card {
+  background: #161a2b;
+  padding: 12px;
+  margin: 10px auto;
+  border-radius: 12px;
+  width: 80%;
+  position: relative;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: bold;
+  color: #7c4dff;
+}
+
+.xbtn {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: red;
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<!-- LOGIN -->
+<div id="login" class="page active">
+  <h1>Orbitary</h1>
+  <input id="pass" placeholder="Enter passcode">
+  <button onclick="login()">Enter</button>
+</div>
+
+<!-- HOME -->
+<div id="home" class="page">
+  <h1>Home</h1>
+
+  <button onclick="go('topics')">Topics</button>
+  <button onclick="go('notes')">Notes</button>
+  <button onclick="go('eq')">Equations</button>
+  <button onclick="go('info')">Information</button>
+  <button onclick="go('calc')">Calculator</button>
+</div>
+
+<!-- TOPICS -->
+<div id="topics" class="page">
+  <h2>Topics</h2>
+
+  <input id="tTitle" placeholder="Title">
+  <textarea id="tTheory" placeholder="Theory"></textarea>
+  <textarea id="tInfo" placeholder="Information"></textarea>
+
+  <button onclick="saveTopic()">Save</button>
+
+  <div id="topicList"></div>
+
+  <button class="back" onclick="go('home')">Back</button>
+</div>
+
+<!-- NOTES -->
+<div id="notes" class="page">
+  <h2>Notes</h2>
+
+  <input id="nTitle" placeholder="Title">
+  <textarea id="nText" placeholder="Note"></textarea>
+
+  <button onclick="saveNote()">Save</button>
+
+  <div id="noteList"></div>
+
+  <button class="back" onclick="go('home')">Back</button>
+</div>
+
+<!-- EQUATIONS -->
+<div id="eq" class="page">
+  <h2>Equations</h2>
+
+  <input id="section" placeholder="Section name">
+  <button onclick="addSection()">Create Section</button>
+
+  <select id="sel"></select>
+
+  <textarea id="eqInput" placeholder="Equation"></textarea>
+  <button onclick="saveEq()">Save</button>
+
+  <div id="eqList"></div>
+
+  <button class="back" onclick="go('home')">Back</button>
+</div>
+
+<!-- INFO -->
+<div id="info" class="page">
+  <h2>Information</h2>
+
+  <input id="iTitle" placeholder="Title">
+  <textarea id="iText" placeholder="Paste info"></textarea>
+
+  <button onclick="saveInfo()">Save</button>
+
+  <div id="infoList"></div>
+
+  <button class="back" onclick="go('home')">Back</button>
+</div>
+
+<!-- CALCULATOR -->
+<div id="calc" class="page">
+  <h2>Calculator</h2>
+
+  <input id="expr" placeholder="2+2*5 or sqrt(9)">
+  <button onclick="calc()">Solve</button>
+
+  <div id="out"></div>
+
+  <button class="back" onclick="go('home')">Back</button>
+</div>
+
+</div>
+
+<script>
+
+/* STORAGE */
+let data = JSON.parse(localStorage.getItem("scienceHub")) || {
+  topics: [],
+  notes: [],
+  info: [],
+  eq: {}
+};
+
+function save(){
+  localStorage.setItem("scienceHub", JSON.stringify(data));
+}
+
+/* NAV */
+function go(page){
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.getElementById(page).classList.add("active");
+  render();
+}
+
+/* LOGIN */
+function login(){
+  if(pass.value.trim() === "cozy1027"){
+    go("home");
+  } else {
+    alert("Wrong code");
+  }
+}
+
+/* TOPICS */
+function saveTopic(){
+  data.topics.push({
+    title: tTitle.value,
+    theory: tTheory.value,
+    info: tInfo.value
+  });
+  save();
+  go("topics");
+}
+
+function deleteTopic(i){
+  data.topics.splice(i,1);
+  save();
+  render();
+}
+
+/* NOTES */
+function saveNote(){
+  data.notes.push({
+    title: nTitle.value,
+    text: nText.value
+  });
+  save();
+  go("notes");
+}
+
+function deleteNote(i){
+  data.notes.splice(i,1);
+  save();
+  render();
+}
+
+/* INFO */
+function saveInfo(){
+  data.info.push({
+    title: iTitle.value,
+    text: iText.value
+  });
+  save();
+  go("info");
+}
+
+function deleteInfo(i){
+  data.info.splice(i,1);
+  save();
+  render();
+}
+
+/* EQUATIONS */
+function addSection(){
+  let name = section.value.trim();
+  if(!name) return;
+
+  data.eq[name] = data.eq[name] || [];
+  save();
+  render();
+}
+
+function saveEq(){
+  let s = sel.value;
+  if(!s) return;
+
+  data.eq[s].push(eqInput.value);
+  save();
+  render();
+}
+
+function deleteSection(name){
+  delete data.eq[name];
+  save();
+  render();
+}
+
+/* CALCULATOR */
+function calc(){
+  try {
+    let e = expr.value.replace(/sqrt/g,"Math.sqrt");
+    out.innerText = Function("return (" + e + ")")();
+  } catch {
+    out.innerText = "Error";
+  }
+}
+
+/* RENDER */
+function render(){
+
+  topicList.innerHTML = data.topics.map((t,i)=>
+    `<div class="card">
+      <button class="xbtn" onclick="deleteTopic(${i})">X</button>
+      <div class="title">${t.title}</div>
+      <div>${t.theory}</div>
+      <div>${t.info}</div>
+    </div>`
+  ).join("");
+
+  noteList.innerHTML = data.notes.map((n,i)=>
+    `<div class="card">
+      <button class="xbtn" onclick="deleteNote(${i})">X</button>
+      <div class="title">${n.title}</div>
+      <div>${n.text}</div>
+    </div>`
+  ).join("");
+
+  infoList.innerHTML = data.info.map((n,i)=>
+    `<div class="card">
+      <button class="xbtn" onclick="deleteInfo(${i})">X</button>
+      <div class="title">${n.title}</div>
+      <div>${n.text}</div>
+    </div>`
+  ).join("");
+
+  sel.innerHTML = Object.keys(data.eq)
+    .map(k=>`<option>${k}</option>`).join("");
+
+  eqList.innerHTML = Object.entries(data.eq)
+    .map(([k,v])=>`
+      <div class="card">
+        <button class="xbtn" onclick="deleteSection('${k}')">X</button>
+        <div class="title">${k}</div>
+        <div>${v.join("<br>")}</div>
+      </div>
+    `).join("");
+}
+
+render();
+
+</script>
+
+</body>
+</html>
